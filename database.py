@@ -8,9 +8,11 @@ DB_HOST = 'localhost'
 DB_PORT = '5432'
 
 
-def _create_connection(dbname: str, user: str, password: str, host: str, port: str):
+def _create_cursor(dbname: str, user: str, password: str, host: str, port: str):
     con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
-    return con
+    con.autocommit = True
+    cursor = con.cursor()
+    return cursor
 
 
 def _query_from_file(path: str) -> str:
@@ -21,9 +23,7 @@ def _query_from_file(path: str) -> str:
 class Database:
     @staticmethod
     def create_db():
-        con = _create_connection(dbname='postgres', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
-        con.autocommit = True
-        cursor = con.cursor()
+        cursor = _create_cursor(dbname='postgres', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
         cursor.execute('DROP DATABASE IF EXISTS patterns_db;')
 
         try:
@@ -32,8 +32,14 @@ class Database:
             print('База данных уже создана')
             return
 
-        con = _create_connection(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
-        con.autocommit = True
-        cursor = con.cursor()
+        cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
         cursor.execute(_query_from_file('./sql_scripts/create_tables.sql'))
         cursor.close()
+
+    @staticmethod
+    def get_products():
+        cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+        cursor.execute('SELECT name, price::text FROM products')
+        res = cursor.fetchall()
+        cursor.close()
+        return res
