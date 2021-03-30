@@ -2,9 +2,10 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QTableWidgetItem, QPushButton,
 from PyQt5.QtCore import Qt, QVariant
 from mainform import Ui_MainWindow
 
-from collections import namedtuple
+from decimal import Decimal
 
 from database import Database
+from builder import OrderBuilder
 
 TITLE = 'Лабораторная №5'
 
@@ -14,7 +15,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        # self.ui.centralwidget.setLayout(self.ui.main_layout)
+        self.ui.centralwidget.setLayout(self.ui.horizontalLayout)
         self.setWindowTitle(TITLE)
 
         self.add_menu()
@@ -22,10 +23,14 @@ class MainWindow(QMainWindow):
         self.db = Database
         self.db.create_db()
 
-        self.products = None
+        self.products = {a[0]: Decimal(a[1]) for a in self.db.get_products()}
         self.create_product_list()
 
-        self.ui.tableWidget.cellClicked[int, int].connect(self.item_clicked)
+        self.boxes_names = ['Коробка']
+
+        self.order_builder = OrderBuilder(self.ui.treeWidget, 'Коробка', self.products['Коробка'])
+        for col in range(not self.ui.treeWidget.columnCount()):
+            self.ui.treeWidget.resizeColumnToContents(col)
 
     def add_menu(self):
         self.add_about_menu()
@@ -41,18 +46,18 @@ class MainWindow(QMainWindow):
         self.message("Об авторе", "Козловский А.М. Группа М8О-412Б-17")
 
     def create_product_list(self):
-        def create_widget_with_buttons(row):
-            btn_plus = QPushButton('+')
-            size = 20
-            btn_plus.setFixedSize(size, size)
-            btn_plus.setStyleSheet('QPushButton {color: green}')
-            btn_plus.clicked.connect(self.item_clicked)
-            btn_plus.setProperty("row", QVariant(row))
+        def create_widget_with_buttons(product):
+            def create_button(text, color):
+                btn = QPushButton(text)
+                size = 20
+                btn.setFixedSize(size, size)
+                btn.setStyleSheet(f'QPushButton {{color: {color}}}')
+                btn.clicked.connect(self.item_clicked)
+                btn.setProperty("product", QVariant(product))
+                return btn
 
-            btn_minus = QPushButton('-')
-            btn_minus.setFixedSize(size, size)
-            btn_minus.setStyleSheet('QPushButton {color: red}')
-            btn_minus.clicked.connect(self.item_clicked)
+            btn_plus = create_button('+', 'green')
+            btn_minus = create_button('-', 'red')
 
             widget = QWidget()
             layout = QHBoxLayout(widget)
@@ -64,27 +69,38 @@ class MainWindow(QMainWindow):
             widget.setLayout(layout)
             return widget
 
-        Product = namedtuple('Product', ['name', 'price'])
-        products = list(map(Product._make, self.db.get_products()))
-        self.products = products
+        def create_item(text: str) -> QTableWidgetItem:
+            item = QTableWidgetItem(str(text))
+            item.setFlags(item.flags() ^ Qt.ItemFlag.ItemIsEditable)
+            return item
+
+        products = self.products
 
         row_count = len(products)
-        col_count = len(products[0])+1
+        col_count = 3
         self.ui.tableWidget.setRowCount(row_count)
         self.ui.tableWidget.setColumnCount(col_count)
-        for row, product in enumerate(products):
-            self.ui.tableWidget.setItem(row, 0, QTableWidgetItem(product.name))
-            self.ui.tableWidget.setItem(row, 1, QTableWidgetItem(product.price))
-
-            self.ui.tableWidget.setCellWidget(row, col_count-1, create_widget_with_buttons(row))
+        for row, (product_name, product_price) in enumerate(products.items()):
+            self.ui.tableWidget.setItem(row, 0, create_item(product_name))
+            self.ui.tableWidget.setItem(row, 1, create_item(product_price))
+            self.ui.tableWidget.setCellWidget(row, col_count-1, create_widget_with_buttons(product_name))
 
         self.ui.tableWidget.resizeColumnsToContents()
         self.ui.tableWidget.setHorizontalHeaderItem(col_count-1, QTableWidgetItem())
-        # self.ui.tableWidget.
 
     def item_clicked(self):
         btn = self.sender()
-        row = btn.property("row")
-        print(row)
+        product = btn.property("product")
+
+        current_item = self.ui.treeWidget.currentItem()
+        if current_item is not None and current_item.name in self.boxes_names:
+            self.order_builder.set_current_box(current_item)
+            if product in self.boxes_names:
+                self.order_builder.add_box(product, self.products[product])
+            else:
+                self.order_builder.add_product(product, self.products[product], 1)
+            self.order_builder.current_box().setExpanded(True)
+
+
 
 

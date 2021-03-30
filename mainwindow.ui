@@ -23,7 +23,7 @@
       <height>381</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,2">
      <item>
       <widget class="QTableWidget" name="tableWidget">
        <property name="alternatingRowColors">
@@ -34,9 +34,6 @@
        </property>
        <property name="sortingEnabled">
         <bool>true</bool>
-       </property>
-       <property name="cornerButtonEnabled">
-        <bool>false</bool>
        </property>
        <column>
         <property name="text">
@@ -67,17 +64,6 @@
          <string>Цена</string>
         </property>
        </column>
-       <item>
-        <property name="text">
-         <string>Коробка</string>
-        </property>
-        <property name="text">
-         <string>1</string>
-        </property>
-        <property name="text">
-         <string>1</string>
-        </property>
-       </item>
       </widget>
      </item>
     </layout>
