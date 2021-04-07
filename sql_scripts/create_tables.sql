@@ -1,7 +1,9 @@
+SET lc_monetary TO "en_US.UTF-8";
+
 CREATE TABLE products (
         id serial PRIMARY KEY,
         name text UNIQUE NOT NULL,
-        price money NOT NULL CHECK (price::numeric > 0)
+        price numeric(12,2) NOT NULL CHECK (price > 0)
     );
 
 CREATE TABLE users (
@@ -20,7 +22,7 @@ CREATE TABLE orders (
         order_time timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP),
         current_status status NOT NULL,
         delivery_type delivery NOT NULL,
-        price money NOT NULL CHECK (price::numeric > 0),
+        price numeric(12,2) NOT NULL CHECK (price > 0),
         login varchar(32) REFERENCES users
     );
 
