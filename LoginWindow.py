@@ -5,6 +5,7 @@ import bcrypt
 
 from MainWindow import MainWindow
 from RegisterWindow import RegisterWindow
+from RestoreWindow import RestoreWindow
 from database import Database
 from src import TITLE
 
@@ -18,14 +19,21 @@ class LoginWindow(QMainWindow):
         self.setWindowTitle(TITLE)
 
         self.db = Database
-        # self.db.create_db()
+        self.db.create_db()
 
         self.main_window = MainWindow()
+
         self.register_window = RegisterWindow()
         self.register_window.signal.connect(self.show)
 
+        self.restore_window = RestoreWindow()
+        self.restore_window.signal.connect(self.show)
+
+        self.ui.pb_restore.setStyleSheet("border: none")
+
         self.ui.pb_login.clicked.connect(self.clicked_login)
         self.ui.pb_register.clicked.connect(self.clicked_register)
+        self.ui.pb_restore.clicked.connect(self.clicked_restore)
 
     def clicked_login(self):
         login = self.ui.le_login.text()
@@ -36,6 +44,7 @@ class LoginWindow(QMainWindow):
 
         hashed_pw = self.db.get_pw_by_login(login)
 
+        # TODO удалить
         if (login == 'login' and password == '123') or (hashed_pw is not None and bcrypt.checkpw(str.encode(password), hashed_pw)):
             self.main_window.set_login(login)
             self.main_window.show()
@@ -52,6 +61,18 @@ class LoginWindow(QMainWindow):
         self.register_window.ui.le_login.setText(login)
         self.register_window.ui.le_password.setText(password)
         self.close()
+
+    def clicked_restore(self):
+        login = self.ui.le_login.text()
+
+        secret_question, secret_answer = self.db.get_secret(login)
+
+        if not secret_question or not secret_answer:
+            QMessageBox.about(self, TITLE, "Неправильный логин")
+        else:
+            self.restore_window.set_params(login, secret_question, secret_answer)
+            self.restore_window.show()
+            self.close()
 
     def show(self) -> None:
         self.ui.le_login.setText('login')

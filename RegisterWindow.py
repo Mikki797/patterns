@@ -3,7 +3,6 @@ from PyQt5.QtCore import pyqtSignal, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 from forms.registerform import Ui_MainWindow
 
-from psycopg2 import errors
 import bcrypt
 
 from database import Database, User

@@ -174,6 +174,7 @@ class MainWindow(QMainWindow):
 
     def make_order(self):
         try:
+            self.db.delete_save_order(self.login)
             self.add_order(OrderStatus.IN_WAY)
         except Exception as e:
             QMessageBox.about(self, TITLE, e.args[0])
@@ -181,7 +182,7 @@ class MainWindow(QMainWindow):
             QMessageBox.about(self, TITLE, "Заказ успешно сделан!")
         self.clear_order()
 
-    def add_order(self, type: OrderStatus):
+    def add_order(self, order_status: OrderStatus):
         delivery_type = None
         if self.ui.cb_delivery.currentText() == "Нет":
             delivery_type = DeliveryType.NO_DELIVERY
@@ -189,7 +190,7 @@ class MainWindow(QMainWindow):
             delivery_type = DeliveryType.COMMON
         elif self.ui.cb_delivery.currentText() == "Срочная":
             delivery_type = DeliveryType.EXPRESS
-        self.db.add_order(self.login, type, delivery_type, self.ui.cb_discount.isChecked(),
+        self.db.add_order(self.login, order_status, delivery_type, self.ui.cb_discount.isChecked(),
                           self.ui.sb_total.value(), self.order_builder.get_dict())
 
     def closeEvent(self, event: QCloseEvent) -> None:

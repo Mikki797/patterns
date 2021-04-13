@@ -79,7 +79,7 @@ class Database:
         return None if res == [] else bytes(res[0][0])
 
     @staticmethod
-    def register_user(user: User):
+    def register_user(user: User) -> None:
         cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
         try:
             cursor.execute('INSERT INTO users VALUES (%s, %s, %s, %s, %s);',
@@ -92,7 +92,7 @@ class Database:
             cursor.close()
 
     @staticmethod
-    def add_product_from_dict(cursor, order_id: int, parent_id: Union[None, int], product_dict: Tuple):
+    def add_product_from_dict(cursor, order_id: int, parent_id: Union[None, int], product_dict: Tuple) -> None:
         if isinstance(product_dict[1], int):
             is_box = False
             number = product_dict[1]
@@ -110,7 +110,7 @@ class Database:
 
     @staticmethod
     def add_order(login: str, status: OrderStatus, delivery_type: DeliveryType, discount: bool, price: Decimal,
-                  products: Tuple):
+                  products: Tuple) -> None:
         cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT,
                                 autocommit=False)
         cursor.execute('INSERT INTO orders (id, order_time, current_status, delivery_type, discount, price, user_login)'
@@ -123,8 +123,23 @@ class Database:
         cursor.close()
 
     @staticmethod
-    def delete_save_order(login: str):
+    def delete_save_order(login: str) -> None:
         cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
         cursor.execute('DELETE FROM orders WHERE user_login = %s AND current_status = %s',
                        (login, OrderStatus.SAVE.value))
+        cursor.close()
+
+    @staticmethod
+    def get_secret(login: str) -> Tuple[str, bytes]:
+        cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+        cursor.execute('SELECT secret_question, secret_answer FROM users WHERE login=%s;', (login,))
+        res = cursor.fetchall()
+        cursor.close()
+        return ('', b'') if res == [] else (res[0][0], bytes(res[0][1]))
+
+    @staticmethod
+    def set_new_password(login: str, hash_pw: bytes) -> None:
+        cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+        cursor.execute('UPDATE users SET password = %s WHERE login = %s',
+                       (hash_pw, login))
         cursor.close()
