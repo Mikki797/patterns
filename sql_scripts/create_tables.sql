@@ -7,11 +7,11 @@ CREATE TABLE products (
     );
 
 CREATE TABLE users (
-        login varchar(32) PRIMARY KEY,
-        password varchar(60) DEFAULT NULL, -- хэшировано, TODO добавить NOT NULL
-        secret_question varchar(128) DEFAULT NULL, -- TODO добавить NOT NULL
-        secret_question_answer varchar(60) DEFAULT NULL, --хэшировано, TODO добавить NOT NULL
-        name varchar(32) DEFAULT NULL
+        login varchar(32) PRIMARY KEY CHECK (char_length(login) > 4),
+        password bytea NOT NULL, -- хэшировано
+        secret_question varchar(128) NOT NULL,
+        secret_answer bytea NOT NULL, --хэшировано
+        name varchar(32) NOT NULL
     );
 
 CREATE TYPE status as ENUM ('save', 'in_way', 'received');
@@ -22,14 +22,18 @@ CREATE TABLE orders (
         order_time timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP),
         current_status status NOT NULL,
         delivery_type delivery NOT NULL,
+        discount boolean NOT NULL,
         price numeric(12,2) NOT NULL CHECK (price > 0),
-        login varchar(32) REFERENCES users
+        user_login varchar(32) REFERENCES users
     );
 
+CREATE UNIQUE INDEX orders_unique_save ON orders(user_login) WHERE current_status = 'save';
+
 CREATE TABLE orders_products (
-        order_id integer REFERENCES orders,
-        product_id integer REFERENCES products,
-        depth smallint NOT NULL,
+        id serial PRIMARY KEY,
+        order_id integer REFERENCES orders ON DELETE CASCADE,
+        product_name text REFERENCES products (name),
+        parent_id integer REFERENCES orders_products,
         number smallint NOT NULL
     );
 
@@ -39,10 +43,10 @@ CREATE TABLE logs (
         log text NOT NULL,
         order_id integer REFERENCES orders
     );
-
-INSERT INTO users VALUES
-    ('user1'),
-    ('user2');
+--
+--INSERT INTO users VALUES
+--    ('user1'),
+--    ('user2');
 
 INSERT INTO products VALUES
     (DEFAULT, 'Коробка', 1),
