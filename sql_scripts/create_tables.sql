@@ -10,7 +10,7 @@ CREATE TABLE users (
         login varchar(32) PRIMARY KEY CHECK (char_length(login) > 4),
         password bytea NOT NULL, -- хэшировано
         secret_question varchar(128) NOT NULL,
-        secret_answer varchar(64) NOT NULL, --хэшировано
+        secret_answer bytea NOT NULL, --хэшировано
         name varchar(32) NOT NULL
     );
 
@@ -26,6 +26,8 @@ CREATE TABLE orders (
         price numeric(12,2) NOT NULL CHECK (price > 0),
         user_login varchar(32) REFERENCES users
     );
+
+CREATE UNIQUE INDEX orders_unique_save ON orders(user_login) WHERE current_status = 'save';
 
 CREATE TABLE orders_products (
         id serial PRIMARY KEY,

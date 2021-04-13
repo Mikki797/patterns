@@ -30,7 +30,7 @@ class User:
     login: str
     password: bytes
     secret_question: str
-    secret_answer: str
+    secret_answer: bytes
     name: str
 
 
@@ -92,8 +92,7 @@ class Database:
             cursor.close()
 
     @staticmethod
-    def add_product_from_dict(cursor, order_id: int, parent_id: Union[str, int], product_dict: Tuple):
-        # cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+    def add_product_from_dict(cursor, order_id: int, parent_id: Union[None, int], product_dict: Tuple):
         if isinstance(product_dict[1], int):
             is_box = False
             number = product_dict[1]
@@ -108,7 +107,6 @@ class Database:
         if is_box:
             for child_product in product_dict[1]:
                 Database.add_product_from_dict(cursor, order_id, parent_id, child_product)
-        # cursor.close()
 
     @staticmethod
     def add_order(login: str, status: OrderStatus, delivery_type: DeliveryType, discount: bool, price: Decimal,
@@ -116,9 +114,17 @@ class Database:
         cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT,
                                 autocommit=False)
         cursor.execute('INSERT INTO orders (id, order_time, current_status, delivery_type, discount, price, user_login)'
-                       'VALUES (DEFAULT, DEFAULT, %s, %s, %s, %s, %s) RETURNING id;',
+                       'VALUES (DEFAULT, DEFAULT, %s, %s, %s, %s, %s) '
+                       'RETURNING id;',
                        (status.value, delivery_type.value, discount, price, login))
         order_id = int(cursor.fetchall()[0][0])
-        Database.add_product_from_dict(cursor, order_id, "NULL", products)
-        cursor.commit()
+        Database.add_product_from_dict(cursor, order_id, None, products)
+        cursor.connection.commit()
+        cursor.close()
+
+    @staticmethod
+    def delete_save_order(login: str):
+        cursor = _create_cursor(dbname='patterns_db', user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+        cursor.execute('DELETE FROM orders WHERE user_login = %s AND current_status = %s',
+                       (login, OrderStatus.SAVE.value))
         cursor.close()

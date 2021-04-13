@@ -54,7 +54,15 @@ class MainWindow(QMainWindow):
         self.set_sum()
 
     def add_menu(self):
+        self.add_order_menu()
         self.add_about_menu()
+
+    def add_order_menu(self):
+        order_menu = self.ui.menubar.addMenu(self.tr("&Заказ"))
+
+        clear_order_action = QAction("Очистить", self)
+        clear_order_action.triggered.connect(self.clear_order)
+        order_menu.addAction(clear_order_action)
 
     def add_about_menu(self):
         about_menu = self.ui.menubar.addMenu(self.tr("&Помощь"))
@@ -156,10 +164,22 @@ class MainWindow(QMainWindow):
         self.ui.sb_total.setValue(self.ui.sb_sum.value() + self.ui.sb_delivery.value())
 
     def save_order(self):
-        self.add_order(OrderStatus.SAVE)
+        try:
+            self.db.delete_save_order(self.login)
+            self.add_order(OrderStatus.SAVE)
+        except Exception as e:
+            QMessageBox.about(self, TITLE, e.args[0])
+        else:
+            QMessageBox.about(self, TITLE, "Заказ успешно сохранен!")
 
     def make_order(self):
-        self.add_order(OrderStatus.IN_WAY)
+        try:
+            self.add_order(OrderStatus.IN_WAY)
+        except Exception as e:
+            QMessageBox.about(self, TITLE, e.args[0])
+        else:
+            QMessageBox.about(self, TITLE, "Заказ успешно сделан!")
+        self.clear_order()
 
     def add_order(self, type: OrderStatus):
         delivery_type = None
@@ -187,3 +207,8 @@ class MainWindow(QMainWindow):
 
     def set_login(self, login):
         self.login = login
+
+    def clear_order(self):
+        self.order_builder = OrderBuilder(self.ui.treeWidget, 'Коробка', self.products['Коробка'])
+        self.ui.cb_delivery.setCurrentIndex(0)
+        self.set_sum()

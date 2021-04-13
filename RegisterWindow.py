@@ -41,9 +41,10 @@ class RegisterWindow(QMainWindow):
             return
 
         hash_pw = bcrypt.hashpw(str.encode(self.ui.le_password.text()), bcrypt.gensalt())
+        hash_secret_answer = bcrypt.hashpw(str.encode(self.ui.le_secret_answer.text()), bcrypt.gensalt())
         try:
             self.db.register_user(User(self.ui.le_login.text(), hash_pw, self.ui.le_secret_question.text(),
-                                       self.ui.le_secret_answer.text(), self.ui.le_name.text()))
+                                       hash_secret_answer, self.ui.le_name.text()))
         except ValueError as e:
             QMessageBox.about(self, TITLE, e.args[0])
         else:

@@ -9,6 +9,7 @@ from typing import Tuple
 class OrderBuilder(Iterable):
     def __init__(self, tree_widget: QTreeWidget, box_name: str, box_price: Decimal):
         self.tree_widget = tree_widget
+        self.tree_widget.clear()
         self.product_factory = ProductFactory()
         self.box_factory = BoxFactory()
         self._current_box = self.box_factory.create_component(box_name, 1, box_price, 0)
